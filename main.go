@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 func home(w http.ResponseWriter, r *http.Request) {
@@ -14,15 +16,22 @@ func home(w http.ResponseWriter, r *http.Request) {
 }
 
 func snippetView(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Hello from snippet view"))
+	// 获取请求中的 id 参数 并转 int
+	id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	if err != nil || id < 1 {
+		http.NotFound(w, r)
+		return
+	}
+	//使用 fmt.Fprintf() 函数将 id 值与我们的响应进行插值，并将其写入 http.ResponseWriter 中。
+	fmt.Fprintf(w, "Display specific snippet with ID %d", id)
 }
 
 func snippetCreate(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		// 在调用 w.WriteHeader() 或 w.Write() 后更改响应标头映射不会影响用户收到的标头。
 		// 在调用这些方法之前，您需要确保响应标头映射包含您想要的所有标头。
-		w.Header().Set("Allow", "POST")
-		http.Error(w, "Method Not Allowed", 405)
+		w.Header().Set("Allow", http.MethodPost)
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
 	}
 	w.Write([]byte("Create snippet"))
