@@ -22,8 +22,7 @@ func snippetCreate(w http.ResponseWriter, r *http.Request) {
 		// 在调用 w.WriteHeader() 或 w.Write() 后更改响应标头映射不会影响用户收到的标头。
 		// 在调用这些方法之前，您需要确保响应标头映射包含您想要的所有标头。
 		w.Header().Set("Allow", "POST")
-		w.WriteHeader(405)
-		w.Write([]byte("Method Not Allowed"))
+		http.Error(w, "Method Not Allowed", 405)
 		return
 	}
 	w.Write([]byte("Create snippet"))
