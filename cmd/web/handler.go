@@ -13,14 +13,12 @@ func home(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-
 	// 需要指出的是，您传递给template.ParseFiles()函数的文件路径必须是相对于当前工作目录的，也就是运行 go run 的目录，或者是绝对路径。在下面的代码中，我设置了相对于项目目录根目录的路径。
 	files := []string{
 		"./ui/html/pages/base.tmpl",
 		"./ui/html/pages/partials/nav.tmpl",
 		"./ui/html/pages/home.tmpl",
 	}
-
 	ts, err := template.ParseFiles(files...)
 	if err != nil {
 		log.Print(err.Error())
