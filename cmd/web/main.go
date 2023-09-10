@@ -28,6 +28,13 @@ func main() {
 	//:如果想在日志输出中包含完整的文件路径，而不仅仅是文件名，可以在创建自定义日志记录器时使用 log.Llongfile 标志，而不是 log.Lshortfile。
 	// 还可以通过添加 log.LUTC 标志，强制日志记录器使用 UTC 日期（而不是本地日期）。
 	errorLogger := log.New(os.Stdout, "Error\t", log.Ldate|log.Ltime|log.Lshortfile)
+	// 启用文件日志
+	f, err := os.OpenFile("./log/info.log", os.O_RDWR|os.O_CREATE, 0666)
+	if err != nil {
+		errorLogger.Fatal(err)
+	}
+	defer f.Close()
+	fileInfoLogger := log.New(f, "INFO\t", log.Ldate|log.Ltime)
 
 	mux := http.NewServeMux()
 	// 当该处理程序接收到一个请求时，它会删除 URL 路径中的前导斜线，然后在 ./ui/static 目录中搜索相应的文件发送给用户。
@@ -40,6 +47,7 @@ func main() {
 	mux.HandleFunc("/snippet/view", snippetView)
 	mux.HandleFunc("/snippet/create", snippetCreate)
 	infoLogger.Printf("Starting server on %s", cfg.addr)
+	fileInfoLogger.Printf("Starting server on %s", cfg.addr)
 
 	// 自定义 http Server 错误日志输出器
 	srv := &http.Server{
@@ -49,7 +57,7 @@ func main() {
 		Handler:  mux,
 	}
 
-	err := srv.ListenAndServe()
+	err = srv.ListenAndServe()
 	errorLogger.Fatal(err)
 }
 
