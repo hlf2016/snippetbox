@@ -8,6 +8,12 @@ import (
 	"strings"
 )
 
+type application struct {
+	infoLogger     *log.Logger
+	errorLogger    *log.Logger
+	fileInfoLogger *log.Logger
+}
+
 // 聚合 config 设置 然后使用 flag.StringVar 读取环境变量赋值
 type config struct {
 	addr      string
@@ -28,6 +34,7 @@ func main() {
 	//:如果想在日志输出中包含完整的文件路径，而不仅仅是文件名，可以在创建自定义日志记录器时使用 log.Llongfile 标志，而不是 log.Lshortfile。
 	// 还可以通过添加 log.LUTC 标志，强制日志记录器使用 UTC 日期（而不是本地日期）。
 	errorLogger := log.New(os.Stdout, "Error\t", log.Ldate|log.Ltime|log.Lshortfile)
+
 	// 启用文件日志
 	f, err := os.OpenFile("./log/info.log", os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
@@ -36,6 +43,12 @@ func main() {
 	defer f.Close()
 	fileInfoLogger := log.New(f, "INFO\t", log.Ldate|log.Ltime)
 
+	app := &application{
+		infoLogger:     infoLogger,
+		errorLogger:    errorLogger,
+		fileInfoLogger: fileInfoLogger,
+	}
+
 	mux := http.NewServeMux()
 	// 当该处理程序接收到一个请求时，它会删除 URL 路径中的前导斜线，然后在 ./ui/static 目录中搜索相应的文件发送给用户。
 	// 因此，为了使该处理程序正常工作，我们必须在将 URL 路径传递给 http.FileServer 之前，去掉 URL 路径中以"/static "开头的斜线。
@@ -43,9 +56,9 @@ func main() {
 	fileServer := http.FileServer(http.Dir(cfg.staticDir))
 	// log.Print(cfg)
 	mux.Handle("/static/", http.StripPrefix("/static", neuter(fileServer)))
-	mux.HandleFunc("/", home)
-	mux.HandleFunc("/snippet/view", snippetView)
-	mux.HandleFunc("/snippet/create", snippetCreate)
+	mux.HandleFunc("/", app.home)
+	mux.HandleFunc("/snippet/view", app.snippetView)
+	mux.HandleFunc("/snippet/create", app.snippetCreate)
 	infoLogger.Printf("Starting server on %s", cfg.addr)
 	fileInfoLogger.Printf("Starting server on %s", cfg.addr)
 
