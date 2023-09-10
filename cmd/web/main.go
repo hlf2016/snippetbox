@@ -40,7 +40,16 @@ func main() {
 	mux.HandleFunc("/snippet/view", snippetView)
 	mux.HandleFunc("/snippet/create", snippetCreate)
 	infoLogger.Printf("Starting server on %s", cfg.addr)
-	err := http.ListenAndServe(cfg.addr, mux)
+
+	// 自定义 http Server 错误日志输出器
+	srv := &http.Server{
+		Addr: cfg.addr,
+		// 设置 错误日志输出为 自定义格式
+		ErrorLog: errorLogger,
+		Handler:  mux,
+	}
+
+	err := srv.ListenAndServe()
 	errorLogger.Fatal(err)
 }
 
