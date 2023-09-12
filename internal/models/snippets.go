@@ -34,13 +34,11 @@ func (m *SnippetModel) Insert(title string, content string, expires int) (int, e
 }
 
 func (m *SnippetModel) Get(id int) (*Snippet, error) {
-	stmt := `SELECT id, title, content, created, expires FROM snippets WHERE expires > UTC_TIMESTAMP() AND id = ?`
-	row := m.DB.QueryRow(stmt, id)
 	// 初始化指向已清零的新 Snippet 结构的指针。
 	s := &Snippet{}
 	// 使用 row.Scan() 将 sql.Row 中每个字段的值复制到 Snippet 结构中的相应字段。
 	// 请注意，row.Scan 的参数是指向要将数据复制到的位置的指针，参数数必须与语句返回的列数完全相同。
-	err := row.Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
+	err := m.DB.QueryRow(`SELECT id, title, content, created, expires FROM snippets WHERE expires > UTC_TIMESTAMP() AND id = ?`, id).Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
 	if err != nil {
 		// 如果查询没有返回记录，那么 row.Scan() 将返回一个 sql.ErrNoRows 错误。
 		// 我们使用 errors.Is() 函数专门检查该错误，并返回我们自己的 ErrNoRecord 错误（我们稍后将创建该错误）
