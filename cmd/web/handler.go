@@ -63,8 +63,27 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	files := []string{
+		"./ui/html/pages/base.tmpl",
+		"./ui/html/pages/partials/nav.tmpl",
+		"./ui/html/pages/view.tmpl",
+	}
+	ts, err := template.ParseFiles(files...)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	data := &templateData{
+		Snippet: snippet,
+	}
+
+	err = ts.ExecuteTemplate(w, "base", data)
+	if err != nil {
+		app.serverError(w, err)
+	}
 	// 将片段数据写成纯文本 HTTP 响应体。
-	fmt.Fprintf(w, "%+v", snippet)
+	//fmt.Fprintf(w, "%+v", snippet)
 }
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
