@@ -52,5 +52,27 @@ func (m *SnippetModel) Get(id int) (*Snippet, error) {
 }
 
 func (m *SnippetModel) Latest() ([]*Snippet, error) {
-	return nil, nil
+	rows, err := m.DB.Query(`SELECT id, title, content, created, expires FROM snippets WHERE expires > UTC_TIMESTAMP() ORDER BY id DESC LIMIT 10`)
+	if err != nil {
+		return nil, err
+	}
+	// 使用 defer rows.Close() 关闭结果集至关重要。只要结果集处于打开状态，底层数据库连接就会一直处于打开状态......因此，
+	// 如果该方法出现问题，结果集没有关闭，就会迅速导致池中的所有连接被用完
+	defer rows.Close()
+
+	var snippets []*Snippet
+
+	for rows.Next() {
+		s := &Snippet{}
+		err := rows.Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
+		if err != nil {
+			return nil, err
+		}
+		snippets = append(snippets, s)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return snippets, nil
 }

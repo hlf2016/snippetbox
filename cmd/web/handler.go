@@ -14,6 +14,18 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		app.notFound(w)
 		return
 	}
+
+	snippets, err := app.snippets.Latest()
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	for _, snippet := range snippets {
+		fmt.Fprintf(w, "%+v\n", snippet)
+	}
+	return
+
 	// 需要指出的是，您传递给template.ParseFiles()函数的文件路径必须是相对于当前工作目录的，也就是运行 go run 的目录，或者是绝对路径。在下面的代码中，我设置了相对于项目目录根目录的路径。
 	files := []string{
 		"./ui/html/pages/base.tmpl",
