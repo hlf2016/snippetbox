@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/hlf2016/snippetbox/internal/models"
 )
 
 type application struct {
@@ -16,6 +17,7 @@ type application struct {
 	errorLogger    *log.Logger
 	fileInfoLogger *log.Logger
 	cfg            config
+	snippets       *models.SnippetModel
 }
 
 // 聚合 config 设置 然后使用 flag.StringVar 读取环境变量赋值
@@ -61,6 +63,7 @@ func main() {
 		errorLogger:    errorLogger,
 		fileInfoLogger: fileInfoLogger,
 		cfg:            cfg,
+		snippets:       &models.SnippetModel{DB: db},
 	}
 
 	infoLogger.Printf("Starting server on %s", cfg.addr)
