@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"runtime/debug"
+	"time"
 )
 
 // serverError 辅助程序会将错误信息和堆栈跟踪写入 errorLog，然后向用户发送通用的 500 内部服务器错误响应。
@@ -53,4 +54,10 @@ func (app *application) render(w http.ResponseWriter, status int, page string, d
 	//if err != nil {
 	//	app.serverError(w, err)
 	//}
+}
+
+func (app *application) newTemplateData(r *http.Request) *templateData {
+	return &templateData{
+		CurrentYear: time.Now().Year(),
+	}
 }
