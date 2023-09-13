@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"flag"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -18,6 +19,7 @@ type application struct {
 	fileInfoLogger *log.Logger
 	cfg            config
 	snippets       *models.SnippetModel
+	templateCache  map[string]*template.Template
 }
 
 // 聚合 config 设置 然后使用 flag.StringVar 读取环境变量赋值
@@ -58,12 +60,19 @@ func main() {
 	}
 	defer db.Close()
 
+	// 生成 页面缓存 注入 application 中 方便各处使用
+	templateCache, err := newTemplateCache()
+	if err != nil {
+		errorLogger.Fatal(err)
+	}
+
 	app := &application{
 		infoLogger:     infoLogger,
 		errorLogger:    errorLogger,
 		fileInfoLogger: fileInfoLogger,
 		cfg:            cfg,
 		snippets:       &models.SnippetModel{DB: db},
+		templateCache:  templateCache,
 	}
 
 	infoLogger.Printf("Starting server on %s", cfg.addr)
