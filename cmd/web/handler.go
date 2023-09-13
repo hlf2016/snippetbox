@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/hlf2016/snippetbox/internal/models"
-	"html/template"
 	"net/http"
 	"strconv"
 )
@@ -21,29 +20,10 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 需要指出的是，您传递给template.ParseFiles()函数的文件路径必须是相对于当前工作目录的，也就是运行 go run 的目录，或者是绝对路径。在下面的代码中，我设置了相对于项目目录根目录的路径。
-	files := []string{
-		"./ui/html/base.tmpl",
-		"./ui/html/pages/partials/nav.tmpl",
-		"./ui/html/pages/home.tmpl",
-	}
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-
 	data := &templateData{
 		Snippets: snippets,
 	}
-	// 然后，我们在模板集上使用 Execute() 方法将模板内容写入响应体。Execute() 的最后一个参数代表我们要传入的任何动态数据，现在我们暂且将其保持为nil
-	// err = ts.Execute(w, nil)
-	// 使用 ExecuteTemplate() 方法将 "base "模板的内容写入响应体。
-	err = ts.ExecuteTemplate(w, "base", data)
-	if err != nil {
-		app.serverError(w, err)
-	}
-
+	app.render(w, http.StatusOK, "home.tmpl", data)
 }
 func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
@@ -62,25 +42,12 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	files := []string{
-		"./ui/html/base.tmpl",
-		"./ui/html/pages/partials/nav.tmpl",
-		"./ui/html/pages/view.tmpl",
-	}
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
 
 	data := &templateData{
 		Snippet: snippet,
 	}
 
-	err = ts.ExecuteTemplate(w, "base", data)
-	if err != nil {
-		app.serverError(w, err)
-	}
+	app.render(w, http.StatusOK, "view.tmpl", data)
 	// 将片段数据写成纯文本 HTTP 响应体。
 	//fmt.Fprintf(w, "%+v", snippet)
 }
