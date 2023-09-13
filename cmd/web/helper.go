@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 	"runtime/debug"
@@ -32,9 +33,24 @@ func (app *application) render(w http.ResponseWriter, status int, page string, d
 		app.serverError(w, err)
 		return
 	}
+
+	buf := new(bytes.Buffer)
+	// 将模板写入缓冲区，而不是直接写入 http.ResponseWriter。如果出现错误，则调用我们的 serverError() 辅助程序，然后返回。
+	err := ts.ExecuteTemplate(buf, "base", data)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	// 如果模板在写入缓冲区时没有出现任何错误，我们就可以继续将 HTTP 状态代码写入 http.ResponseWriter 中。
 	w.WriteHeader(status)
-	err := ts.ExecuteTemplate(w, "base", data)
+	// 将缓冲区的内容写入 http.ResponseWriter。注意：这又是一次我们将 http.ResponseWriter 传递给接收 io.Writer 的函数的情况。
+	_, err = buf.WriteTo(w)
 	if err != nil {
 		app.serverError(w, err)
 	}
+	// 直接渲染
+	//err := ts.ExecuteTemplate(w, "base", data)
+	//if err != nil {
+	//	app.serverError(w, err)
+	//}
 }
