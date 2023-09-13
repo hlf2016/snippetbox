@@ -3,14 +3,12 @@ package main
 import (
 	"database/sql"
 	"flag"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/hlf2016/snippetbox/internal/models"
 	"html/template"
 	"log"
 	"net/http"
 	"os"
-	"strings"
-
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/hlf2016/snippetbox/internal/models"
 )
 
 type application struct {
@@ -88,16 +86,6 @@ func main() {
 
 	err = srv.ListenAndServe()
 	errorLogger.Fatal(err)
-}
-
-func neuter(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasSuffix(r.URL.Path, "/") {
-			http.NotFound(w, r)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
 }
 
 func openDB(dsn string) (*sql.DB, error) {
