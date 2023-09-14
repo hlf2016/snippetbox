@@ -1,6 +1,9 @@
 package main
 
-import "net/http"
+import (
+	"github.com/justinas/alice"
+	"net/http"
+)
 
 func (app *application) routes() http.Handler {
 	mux := http.NewServeMux()
@@ -14,7 +17,9 @@ func (app *application) routes() http.Handler {
 	mux.HandleFunc("/snippet/view", app.snippetView)
 	mux.HandleFunc("/snippet/create", app.snippetCreate)
 
+	// 创建一个中间件链，其中包含我们的 "标准 "中间件，该中间件将用于应用程序收到的每个请求。
+	standard := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
 	// 将 servemux 作为 "next "参数传递给 secureHeaders 中间件。
 	// 因为 secureHeaders 只是一个函数，而函数返回的是 http.Handler，所以我们不需要做其他任何事情。
-	return app.recoverPanic(app.logRequest(secureHeaders(mux)))
+	return standard.Then(mux)
 }
