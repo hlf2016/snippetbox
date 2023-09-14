@@ -16,5 +16,5 @@ func (app *application) routes() http.Handler {
 
 	// 将 servemux 作为 "next "参数传递给 secureHeaders 中间件。
 	// 因为 secureHeaders 只是一个函数，而函数返回的是 http.Handler，所以我们不需要做其他任何事情。
-	return secureHeaders(mux)
+	return app.logRequest(secureHeaders(mux))
 }
