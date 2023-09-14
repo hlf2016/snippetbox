@@ -1,25 +1,27 @@
 package main
 
 import (
+	"github.com/julienschmidt/httprouter"
 	"github.com/justinas/alice"
 	"net/http"
 )
 
 func (app *application) routes() http.Handler {
-	mux := http.NewServeMux()
+	router := httprouter.New()
 	// 当该处理程序接收到一个请求时，它会删除 URL 路径中的前导斜线，然后在 ./ui/static 目录中搜索相应的文件发送给用户。
 	// 因此，为了使该处理程序正常工作，我们必须在将 URL 路径传递给 http.FileServer 之前，去掉 URL 路径中以"/static "开头的斜线。
 	// 否则，它将寻找一个不存在的文件，用户将收到未找到的 404 页面响应。幸运的是，Go 包含了一个 http.StripPrefix() 助手，专门用于完成这项任务。
 	fileServer := http.FileServer(http.Dir(app.cfg.staticDir))
 	// log.Print(cfg)
-	mux.Handle("/static/", http.StripPrefix("/static", neuter(fileServer)))
-	mux.HandleFunc("/", app.home)
-	mux.HandleFunc("/snippet/view", app.snippetView)
-	mux.HandleFunc("/snippet/create", app.snippetCreate)
+	router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", neuter(fileServer)))
+	router.HandlerFunc(http.MethodGet, "/", app.home)
+	router.HandlerFunc(http.MethodGet, "/snippet/view/:id", app.snippetView)
+	router.HandlerFunc(http.MethodGet, "/snippet/create", app.snippetCreate)
+	router.HandlerFunc(http.MethodPost, "/snippet/create", app.snippetCreatePost)
 
 	// 创建一个中间件链，其中包含我们的 "标准 "中间件，该中间件将用于应用程序收到的每个请求。
 	standard := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
 	// 将 servemux 作为 "next "参数传递给 secureHeaders 中间件。
 	// 因为 secureHeaders 只是一个函数，而函数返回的是 http.Handler，所以我们不需要做其他任何事情。
-	return standard.Then(mux)
+	return standard.Then(router)
 }
