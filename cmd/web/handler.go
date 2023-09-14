@@ -14,6 +14,9 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 故意制造错误 查看 recoverPanic 中间件的反应
+	// panic("oops! something went wrong")
+
 	snippets, err := app.snippets.Latest()
 	if err != nil {
 		app.serverError(w, err)
