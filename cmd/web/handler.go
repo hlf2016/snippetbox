@@ -61,13 +61,29 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Display the form for creating a new snippet..."))
+	data := app.newTemplateData(r)
+	app.render(w, http.StatusOK, "create.tmpl", data)
 }
 
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
-	title := "O snail"
-	content := "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa"
-	expires := 7
+	// 首先，我们调用 r.ParseForm()，将 POST 请求体中的任何数据添加到 r.PostForm 映射中。
+	// 这也同样适用于 PUT 和 PATCH 请求。如果出现任何错误，我们将使用 app.ClientError() 助手向用户发送 400 Bad Request 响应
+	err := r.ParseForm()
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+	// 使用 r.PostForm.Get() 方法从 r.PostForm 地图中获取标题和内容
+	title := r.PostForm.Get("title")
+	content := r.PostForm.Get("content")
+
+	// r.PostForm.Get() 方法总是以 *string* 形式返回表单数据。然而，我们希望过期值是一个数字，
+	// 并希望在 Go 代码中将其表示为整数。因此，我们需要使用 strconv.Atoi() 手动将表单数据转换为整数，如果转换失败，我们将发送 400 Bad Request 响应
+	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
 
 	id, err := app.snippets.Insert(title, content, expires)
 	if err != nil {
