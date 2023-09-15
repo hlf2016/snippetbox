@@ -86,24 +86,14 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 
 	// 首先，我们调用 r.ParseForm()，将 POST 请求体中的任何数据添加到 r.PostForm 映射中。
 	// 这也同样适用于 PUT 和 PATCH 请求。如果出现任何错误，我们将使用 app.ClientError() 助手向用户发送 400 Bad Request 响应
-	err := r.ParseForm()
+	// ************** 已经封装到 helper 中 decodePostForm *************
+
+	var form snippetCreateForm
+	// 调用表单解码器的 Decode() 方法，传入当前请求和指向我们的 snippetCreateForm 结构的指针。这主要是用 HTML 表单中的相关值填充我们的结构。如果出现问题，我们将向客户端返回 400 Bad Request 响应
+	err := app.decodePostForm(r, &form)
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
 		return
-	}
-
-	// r.PostForm.Get() 方法总是以 *string* 形式返回表单数据。然而，我们希望过期值是一个数字，
-	// 并希望在 Go 代码中将其表示为整数。因此，我们需要使用 strconv.Atoi() 手动将表单数据转换为整数，如果转换失败，我们将发送 400 Bad Request 响应
-	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
-	if err != nil {
-		app.clientError(w, http.StatusBadRequest)
-		return
-	}
-
-	form := snippetCreateForm{
-		Title:   r.PostForm.Get("title"),
-		Content: r.PostForm.Get("content"),
-		Expires: expires,
 	}
 
 	// 处理 多值字段 如 多选
@@ -126,7 +116,7 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	id, err := app.snippets.Insert(form.Title, form.Content, expires)
+	id, err := app.snippets.Insert(form.Title, form.Content, form.Expires)
 	if err != nil {
 		app.serverError(w, err)
 		return

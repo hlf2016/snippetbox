@@ -2,7 +2,9 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"github.com/go-playground/form/v4"
 	"net/http"
 	"runtime/debug"
 	"time"
@@ -60,4 +62,24 @@ func (app *application) newTemplateData(r *http.Request) *templateData {
 	return &templateData{
 		CurrentYear: time.Now().Year(),
 	}
+}
+
+// 创建一个新的 decodePostForm() 辅助方法。这里的第二个参数 dst 是我们要将表单数据解码到的目标目的地。
+func (app *application) decodePostForm(r *http.Request, dst any) error {
+	err := r.ParseForm()
+	if err != nil {
+		return err
+	}
+	// 在我们的 decoder 实例上调用 Decode() ，将目标目的地作为第一个参数传入
+	err = app.formDecoder.Decode(dst, r.PostForm)
+	if err != nil {
+		// 如果我们尝试使用无效的目标目的地 如 nil，Decode() 方法将返回一个类型为 form.InvalidDecoderError 的错误。
+		// 我们使用 errors.As() 来检查这种情况，并引发恐慌，而不是返回错误
+		var invalidDecoderError *form.InvalidDecoderError
+		if errors.As(err, &invalidDecoderError) {
+			panic(err)
+		}
+		return err
+	}
+	return nil
 }
