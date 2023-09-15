@@ -4,21 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/hlf2016/snippetbox/internal/models"
+	"github.com/hlf2016/snippetbox/internal/validator"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"strconv"
-	"strings"
-	"unicode/utf8"
 )
-
-// 定义一个 snippetCreateForm 结构，用于表示表单数据和表单字段的验证错误。
-// 请注意，所有结构字段都是特意导出的（即以大写字母开头）。这是因为结构字段必须导出，才能在渲染模板时被 html/template 包读取
-type snippetCreateForm struct {
-	Title       string
-	Content     string
-	Expires     int
-	FieldErrors map[string]string
-}
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	// 因为httprouter与“/”路径完全匹配，所以我们现在可以从此处理程序中删除对r.URL.Path！=“/”的手动检查。
@@ -79,6 +69,17 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "create.tmpl", data)
 }
 
+// 定义一个 snippetCreateForm 结构，用于表示表单数据和表单字段的验证错误。
+// 请注意，所有结构字段都是特意导出的（即以大写字母开头）。这是因为结构字段必须导出，才能在渲染模板时被 html/template 包读取
+// 更新我们的 snippetCreateForm 结构，使其包含 struct 标记，告诉解码器如何将 HTML 表单值映射到不同的结构字段中。例如，在这里我们告诉解码器将 HTML 表单输入的名称为 "title "的值存储在 Title 字段中。结构标记 `form:"-"` 会告诉解码器在解码时完全忽略某个字段。
+type snippetCreateForm struct {
+	Title   string `form:"title"`
+	Content string `form:"content"`
+	Expires int    `form:"expires"`
+	// 删除显式 FieldErrors 结构字段，转而嵌入 Validator 类型。嵌入 Validator 类型意味着我们的片段创建表格 "继承 "了 Validator 类型的所有字段和方法（包括 FieldErrors 字段）。
+	validator.Validator `form:"-"`
+}
+
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
 	// 将请求正文大小限制为 4096 字节 如果超出大小 那么 r.ParseForm() 将会报错
 	//r.Body = http.MaxBytesReader(w, r.Body, 4096)
@@ -100,10 +101,9 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	}
 
 	form := snippetCreateForm{
-		Title:       r.PostForm.Get("title"),
-		Content:     r.PostForm.Get("content"),
-		Expires:     expires,
-		FieldErrors: map[string]string{},
+		Title:   r.PostForm.Get("title"),
+		Content: r.PostForm.Get("content"),
+		Expires: expires,
 	}
 
 	// 处理 多值字段 如 多选
@@ -111,21 +111,15 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	//	fmt.Fprintf(w, "%d: Item %s\n", i, item)
 	//}
 
-	if strings.TrimSpace(form.Title) == "" {
-		form.FieldErrors["title"] = "This field cannot be blank"
-	} else if utf8.RuneCountInString(form.Title) > 100 { // 当我们检查title字段的长度时，我们使用的是 utf8.RuneCountInString() 函数，而不是 Go 的 len() 函数。这是因为我们要计算的是标题中的字符数，而不是字节数。为了说明两者的区别，字符串 "Zoë "有 3 个字符，但长度为 4 字节，因为有元音 ë 字符。
-		form.FieldErrors["title"] = "This field cannot be more than 100 characters long"
-	}
+	// 由于 Validator 类型已嵌入到 snippetCreateForm 结构中，因此我们可以直接调用 CheckField() 来执行验证检查。
+	// 如果检查结果不为 true，CheckField() 将把提供的键和错误信息添加到 FieldErrors 映射中。例如，在第一行中，我们 "检查 form.Title 字段是否为空"。
+	// 在第二行中，我们 "检查 form.Title 字段的最大字符长度是否为 100"，以此类推。
+	form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
+	form.CheckField(validator.MaxChars(form.Title, 100), "title", "This field cannot be more than 100 characters long")
+	form.CheckField(validator.NotBlank(form.Content), "content", "This field cannot be blank")
+	form.CheckField(validator.PermittedInt(form.Expires, 1, 7, 365), "expires", "This field must equal 1, 7 or 365")
 
-	if strings.TrimSpace(form.Content) == "" {
-		form.FieldErrors["content"] = "This field cannot be blank"
-	}
-
-	if expires != 1 && expires != 7 && expires != 365 {
-		form.FieldErrors["expires"] = "This field must equal 1, 7 or 365"
-	}
-
-	if len(form.FieldErrors) > 0 {
+	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
 		app.render(w, http.StatusUnprocessableEntity, "create.tmpl", data)

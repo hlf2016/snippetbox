@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"flag"
+	"github.com/go-playground/form/v4"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/hlf2016/snippetbox/internal/models"
 	"html/template"
@@ -18,6 +19,7 @@ type application struct {
 	cfg            config
 	snippets       *models.SnippetModel
 	templateCache  map[string]*template.Template
+	formDecoder    *form.Decoder
 }
 
 // 聚合 config 设置 然后使用 flag.StringVar 读取环境变量赋值
@@ -64,6 +66,9 @@ func main() {
 		errorLogger.Fatal(err)
 	}
 
+	// 初始化decoder实例
+	formDecoder := form.NewDecoder()
+
 	app := &application{
 		infoLogger:     infoLogger,
 		errorLogger:    errorLogger,
@@ -71,6 +76,7 @@ func main() {
 		cfg:            cfg,
 		snippets:       &models.SnippetModel{DB: db},
 		templateCache:  templateCache,
+		formDecoder:    formDecoder,
 	}
 
 	infoLogger.Printf("Starting server on %s", cfg.addr)
