@@ -77,7 +77,8 @@ func main() {
 	sessionManager := scs.New()
 	sessionManager.Store = mysqlstore.New(db)
 	sessionManager.Lifetime = 12 * time.Hour
-
+	// 确保在会话 cookie 上设置 Secure 属性。设置该属性意味着用户的网络浏览器只有在使用 HTTPS 连接时才会发送 cookie（而不会通过不安全的 HTTP 连接发送）。
+	sessionManager.Cookie.Secure = true
 	app := &application{
 		infoLogger:     infoLogger,
 		errorLogger:    errorLogger,
@@ -100,7 +101,9 @@ func main() {
 		Handler:  app.routes(),
 	}
 
-	err = srv.ListenAndServe()
+	// err = srv.ListenAndServe() // 改用 https
+	// 使用 ListenAndServeTLS() 方法启动 HTTPS 服务器。我们将 TLS 证书的路径和相应的私钥作为两个参数传递进去。
+	err = srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
 	errorLogger.Fatal(err)
 }
 
