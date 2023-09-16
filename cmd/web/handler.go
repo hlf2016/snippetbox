@@ -53,8 +53,13 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 使用 PopString() 方法获取 "flash "键的值。PopString() 还会从会话数据中删除键和值，因此它的作用类似于一次性获取。如果会话数据中没有匹配的键，该方法将返回空字符串。
+	// 如果只想从会话数据中获取一个值（并将其保留在其中），可以使用 GetString() 方法。scs 软件包还提供了检索其他常见数据类型的方法，包括 GetInt()、GetBool()、GetBytes() 和 GetTime()。
+	flash := app.sessionManager.PopString(r.Context(), "flash")
+
 	data := app.newTemplateData(r)
 	data.Snippet = snippet
+	data.Flash = flash
 
 	app.render(w, http.StatusOK, "view.tmpl", data)
 	// 将片段数据写成纯文本 HTTP 响应体。
@@ -122,6 +127,10 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// 使用 Put() 方法将字符串值（"片段创建成功！"）和相应的键（"flash"）添加到会话数据中。
+	// r.Context 在处理程序处理请求时，将其作为会话管理器临时存储信息的地方
+	// 第二个参数（在我们的例子中是字符串 "flash"）是我们要添加到会话数据中的特定消息的密钥。随后，我们也将使用该键从会话数据中获取信息
+	app.sessionManager.Put(r.Context(), "flash", "Snippet successfully created!")
 	//Redirect the user to the relevant page for the snippet.
 	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
 }

@@ -3,6 +3,8 @@ package main
 import (
 	"database/sql"
 	"flag"
+	"github.com/alexedwards/scs/mysqlstore"
+	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/hlf2016/snippetbox/internal/models"
@@ -10,6 +12,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 )
 
 type application struct {
@@ -20,6 +23,7 @@ type application struct {
 	snippets       *models.SnippetModel
 	templateCache  map[string]*template.Template
 	formDecoder    *form.Decoder
+	sessionManager *scs.SessionManager
 }
 
 // 聚合 config 设置 然后使用 flag.StringVar 读取环境变量赋值
@@ -69,6 +73,11 @@ func main() {
 	// 初始化decoder实例
 	formDecoder := form.NewDecoder()
 
+	// 初始化 session manager
+	sessionManager := scs.New()
+	sessionManager.Store = mysqlstore.New(db)
+	sessionManager.Lifetime = 12 * time.Hour
+
 	app := &application{
 		infoLogger:     infoLogger,
 		errorLogger:    errorLogger,
@@ -77,6 +86,7 @@ func main() {
 		snippets:       &models.SnippetModel{DB: db},
 		templateCache:  templateCache,
 		formDecoder:    formDecoder,
+		sessionManager: sessionManager,
 	}
 
 	infoLogger.Printf("Starting server on %s", cfg.addr)
