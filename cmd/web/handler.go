@@ -55,11 +55,10 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 
 	// 使用 PopString() 方法获取 "flash "键的值。PopString() 还会从会话数据中删除键和值，因此它的作用类似于一次性获取。如果会话数据中没有匹配的键，该方法将返回空字符串。
 	// 如果只想从会话数据中获取一个值（并将其保留在其中），可以使用 GetString() 方法。scs 软件包还提供了检索其他常见数据类型的方法，包括 GetInt()、GetBool()、GetBytes() 和 GetTime()。
-	flash := app.sessionManager.PopString(r.Context(), "flash")
+	// flash := app.sessionManager.PopString(r.Context(), "flash") // 已经 app.newTemplateData(r) 中自动添加 故 注释
 
 	data := app.newTemplateData(r)
 	data.Snippet = snippet
-	data.Flash = flash
 
 	app.render(w, http.StatusOK, "view.tmpl", data)
 	// 将片段数据写成纯文本 HTTP 响应体。
