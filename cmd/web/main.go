@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"database/sql"
 	"flag"
 	"github.com/alexedwards/scs/mysqlstore"
@@ -93,12 +94,18 @@ func main() {
 	infoLogger.Printf("Starting server on %s", cfg.addr)
 	fileInfoLogger.Printf("Starting server on %s", cfg.addr)
 
+	// 初始化一个 tls.Config 结构，用于保存我们希望服务器使用的非默认 TLS 设置。在本例中，我们唯一要更改的是曲线优选值，以便只使用具有汇编实现的椭圆曲线。
+	tlsConfig := &tls.Config{
+		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
+	}
+
 	// 自定义 http Server 错误日志输出器
 	srv := &http.Server{
 		Addr: cfg.addr,
 		// 设置 错误日志输出为 自定义格式
-		ErrorLog: errorLogger,
-		Handler:  app.routes(),
+		ErrorLog:  errorLogger,
+		Handler:   app.routes(),
+		TLSConfig: tlsConfig,
 	}
 
 	// err = srv.ListenAndServe() // 改用 https
