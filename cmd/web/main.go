@@ -95,6 +95,7 @@ func main() {
 	fileInfoLogger.Printf("Starting server on %s", cfg.addr)
 
 	// 初始化一个 tls.Config 结构，用于保存我们希望服务器使用的非默认 TLS 设置。在本例中，我们唯一要更改的是曲线优选值，以便只使用具有汇编实现的椭圆曲线。
+	// 基本上，使用 tls.Config 设置受支持密码套件的自定义列表只会影响 TLS 1.0-1.2 连接 TLS 1.3 则与之无关 被普遍认为是安全的
 	tlsConfig := &tls.Config{
 		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
 	}
@@ -106,6 +107,14 @@ func main() {
 		ErrorLog:  errorLogger,
 		Handler:   app.routes(),
 		TLSConfig: tlsConfig,
+		// 限制 连接闲置 1 分钟后 自动断开
+		IdleTimeout: time.Minute,
+		// 如果在请求被接受 5 秒后仍在读取请求头或正文，Go 就会关闭底层连接。由于这是对连接的 "硬 "关闭，用户不会收到任何 HTTP(S) 响应。
+		// 降低慢客户端攻击的风险
+		// 如果设置了 ReadTimeout 但没有设置 IdleTimeout，那么 IdleTimeout 将默认使用与 ReadTimeout 相同的设置。
+		// 例如，如果将 ReadTimeout 设置为 3 秒，那么就会产生一个副作用，即所有保持连接也会在 3 秒未活动后关闭。一般来说，我的建议是避免任何歧义，始终为服务器设置明确的 IdleTimeout 值。
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
 	}
 
 	// err = srv.ListenAndServe() // 改用 https
