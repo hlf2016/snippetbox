@@ -43,7 +43,28 @@ func (m *UserModel) Insert(name, email, password string) error {
 }
 
 func (m *UserModel) Authenticate(email, password string) (int, error) {
-	return 0, nil
+	// 读取与给定电子邮件相关的 ID 和哈希密码。如果不存在匹配的电子邮件，我们将返回 ErrInvalidCredentials 错误信息
+	var id int
+	var hashedPassword []byte
+	stmt := `SELECT id, hashed_password FROM users WHERE email= ?`
+	err := m.DB.QueryRow(stmt, email).Scan(&id, &hashedPassword)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, ErrInvalidCredential
+		} else {
+			return 0, err
+		}
+	}
+	// 检查提供的散列密码和纯文本密码是否匹配。如果不匹配，我们将返回 ErrInvalidCredentials 错误。
+	err = bcrypt.CompareHashAndPassword(hashedPassword, []byte(password))
+	if err != nil {
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			return 0, ErrInvalidCredential
+		} else {
+			return 0, err
+		}
+	}
+	return id, nil
 }
 
 func (m *UserModel) Exists(id int) (bool, error) {

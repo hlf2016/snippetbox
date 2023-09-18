@@ -12,12 +12,14 @@ var EmailRX = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9
 
 // Validator 定义一个新的验证器类型，其中包含表单字段的验证错误映射。
 type Validator struct {
-	FieldErrors map[string]string
+	// 在结构体中添加一个新的 NonFieldErrors []string 字段，用于保存与特定表单字段无关的验证错误。
+	NonFieldErrors []string
+	FieldErrors    map[string]string
 }
 
 // Valid 如果 validator 的 FieldErrors 不包含任何项时 返回 true
 func (v *Validator) Valid() bool {
-	return len(v.FieldErrors) == 0
+	return len(v.FieldErrors) == 0 && len(v.NonFieldErrors) == 0
 }
 
 func (v *Validator) AddFieldError(key, message string) {
@@ -27,6 +29,10 @@ func (v *Validator) AddFieldError(key, message string) {
 	if _, exists := v.FieldErrors[key]; !exists {
 		v.FieldErrors[key] = message
 	}
+}
+
+func (v *Validator) AddNonFieldError(message string) {
+	v.NonFieldErrors = append(v.NonFieldErrors, message)
 }
 
 func (v *Validator) CheckField(ok bool, key, message string) {
