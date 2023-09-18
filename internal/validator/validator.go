@@ -1,9 +1,14 @@
 package validator
 
 import (
+	"regexp"
 	"strings"
 	"unicode/utf8"
 )
+
+// EmailRX 使用 regexp.MustCompile() 函数解析正则表达式模式，以检查电子邮件地址的格式是否正确。该函数会返回一个指向 "已编译 "regexp.Regexp 类型的指针，如果出现错误则会宕机。在启动时解析一次该模式并将编译后的 regexp.Regexp 保存在一个变量中，比每次需要时都重新解析该模式更高效
+// https://html.spec.whatwg.org/multipage/input.html#valid-e-mail-address
+var EmailRX = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 
 // Validator 定义一个新的验证器类型，其中包含表单字段的验证错误映射。
 type Validator struct {
@@ -38,6 +43,10 @@ func MaxChars(value string, n int) bool {
 	return utf8.RuneCountInString(value) <= n
 }
 
+func MinChars(value string, n int) bool {
+	return utf8.RuneCountInString(value) >= n
+}
+
 func PermittedInt(value int, permittedValue ...int) bool {
 	for i := range permittedValue {
 		if value == permittedValue[i] {
@@ -45,4 +54,8 @@ func PermittedInt(value int, permittedValue ...int) bool {
 		}
 	}
 	return false
+}
+
+func Matches(value string, rx *regexp.Regexp) bool {
+	return rx.MatchString(value)
 }
