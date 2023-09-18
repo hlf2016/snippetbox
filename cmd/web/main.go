@@ -26,6 +26,8 @@ type application struct {
 	templateCache  map[string]*template.Template
 	formDecoder    *form.Decoder
 	sessionManager *scs.SessionManager
+	// 存储在 session 中的用于判断用户是否已经登录的key
+	authId string
 }
 
 // 聚合 config 设置 然后使用 flag.StringVar 读取环境变量赋值
@@ -91,6 +93,7 @@ func main() {
 		templateCache:  templateCache,
 		formDecoder:    formDecoder,
 		sessionManager: sessionManager,
+		authId:         "authenticatedUserID",
 	}
 
 	infoLogger.Printf("Starting server on %s", cfg.addr)
