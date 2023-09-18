@@ -52,3 +52,17 @@ func (app *application) recoverPanic(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+
+// 判断是否登录状态 未登录则重定向
+func (app *application) requireAuthentication(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// 如果用户未通过身份验证，则将其重定向到登录页面，并从中间件链返回，这样就不会执行链中的后续处理程序。
+		if !app.isAuthenticated(r) {
+			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+			return
+		}
+		// 否则，请设置 "Cache-Control: no-store"（缓存控制：不存储）标头，这样需要验证的页面就不会存储在用户浏览器缓存（或其他中间缓存）中。
+		w.Header().Add("Cache-Control", "no-store")
+		next.ServeHTTP(w, r)
+	})
+}
