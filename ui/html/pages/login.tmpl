@@ -5,7 +5,7 @@
     <!-- Notice that here we are looping over the NonFieldErrors and displaying
      them, if any exist -->
     {{range .Form.NonFieldErrors}}
-        <div class='error'>.</div>
+        <div class='error'>{{.}}</div>
     {{end}}
     <input type='hidden' name='csrf_token' value='{{.CSRFToken}}' />
     <div>

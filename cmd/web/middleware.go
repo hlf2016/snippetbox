@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/justinas/nosurf"
 	"net/http"
@@ -64,6 +65,28 @@ func (app *application) requireAuthentication(next http.Handler) http.Handler {
 		}
 		// 否则，请设置 "Cache-Control: no-store"（缓存控制：不存储）标头，这样需要验证的页面就不会存储在用户浏览器缓存（或其他中间缓存）中。
 		w.Header().Add("Cache-Control", "no-store")
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (app *application) authenticate(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id := app.sessionManager.GetInt(r.Context(), app.authId)
+		if id == 0 {
+			next.ServeHTTP(w, r)
+			return
+		}
+		exists, err := app.users.Exists(id)
+		if err != nil {
+			app.serverError(w, err)
+			return
+		}
+
+		if exists {
+			ctx := context.WithValue(r.Context(), isAuthenticatedContextKey, true)
+			r = r.WithContext(ctx)
+		}
+
 		next.ServeHTTP(w, r)
 	})
 }
