@@ -79,6 +79,10 @@ func main() {
 
 	// 初始化 session manager
 	sessionManager := scs.New()
+	// 可以更改会话 cookie，使用 SameSite=Strict 设置，而不是（默认设置）SameSite=Lax
+	// 但需要注意的是，使用 SameSite=Strict 会阻止用户浏览器在所有跨站使用中发送会话 cookie，包括使用 GET 和 HEAD 等 HTTP 方法的安全请求。
+	// 虽然这听起来更安全（确实如此！），但缺点是当用户从其他网站点击链接到您的应用程序时，不会发送会话 cookie。反过来，这意味着￼￼您的应用程序最初会将用户视为 "未登录"，即使他们有一个包含其 "authenticatedUserID "值的活动会话。
+	// sessionManager.Cookie.SameSite = http.SameSiteStrictMode
 	sessionManager.Store = mysqlstore.New(db)
 	sessionManager.Lifetime = 12 * time.Hour
 	// 确保在会话 cookie 上设置 Secure 属性。设置该属性意味着用户的网络浏览器只有在使用 HTTPS 连接时才会发送 cookie（而不会通过不安全的 HTTP 连接发送）。
