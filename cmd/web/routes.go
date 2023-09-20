@@ -23,7 +23,8 @@ func (app *application) routes() http.Handler {
 
 	// 该中间件会在每次 HTTP 请求和响应时自动加载和保存会话数据。
 	// 使用 "dynamic "中间件链的无保护应用路由。
-	dynamic := alice.New(app.sessionManager.LoadAndSave)
+	// 在所有 "dynamic"路由上使用 nosurf 中间件
+	dynamic := alice.New(app.sessionManager.LoadAndSave, noSurf)
 
 	router.Handler(http.MethodGet, "/", dynamic.ThenFunc(app.home))
 	router.Handler(http.MethodGet, "/snippet/view/:id", dynamic.ThenFunc(app.snippetView))

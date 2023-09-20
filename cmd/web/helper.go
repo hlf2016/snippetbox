@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-playground/form/v4"
+	"github.com/justinas/nosurf"
 	"net/http"
 	"runtime/debug"
 	"time"
@@ -63,6 +64,8 @@ func (app *application) newTemplateData(r *http.Request) *templateData {
 		CurrentYear:     time.Now().Year(),
 		Flash:           app.sessionManager.PopString(r.Context(), "flash"),
 		IsAuthenticated: app.isAuthenticated(r),
+		// 所有页面数据上都加入 CSRFToken 便于每个页面上使用
+		CSRFToken: nosurf.Token(r),
 	}
 }
 

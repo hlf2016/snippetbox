@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/justinas/nosurf"
 	"net/http"
 	"strings"
 )
@@ -65,4 +66,15 @@ func (app *application) requireAuthentication(next http.Handler) http.Handler {
 		w.Header().Add("Cache-Control", "no-store")
 		next.ServeHTTP(w, r)
 	})
+}
+
+// 创建一个 NoSurf 中间件函数，该函数使用定制的 CSRF cookie，并设置了安全、路径和仅 HttpOnly 属性。
+func noSurf(next http.Handler) http.Handler {
+	csrfHandler := nosurf.New(next)
+	csrfHandler.SetBaseCookie(http.Cookie{
+		HttpOnly: true,
+		Path:     "/",
+		Secure:   true,
+	})
+	return csrfHandler
 }
