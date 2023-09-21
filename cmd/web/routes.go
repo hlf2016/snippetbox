@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/hlf2016/snippetbox/ui"
 	"github.com/julienschmidt/httprouter"
 	"github.com/justinas/alice"
 	"net/http"
@@ -17,9 +18,15 @@ func (app *application) routes() http.Handler {
 	// 当该处理程序接收到一个请求时，它会删除 URL 路径中的前导斜线，然后在 ./ui/static 目录中搜索相应的文件发送给用户。
 	// 因此，为了使该处理程序正常工作，我们必须在将 URL 路径传递给 http.FileServer 之前，去掉 URL 路径中以"/static "开头的斜线。
 	// 否则，它将寻找一个不存在的文件，用户将收到未找到的 404 页面响应。幸运的是，Go 包含了一个 http.StripPrefix() 助手，专门用于完成这项任务。
-	fileServer := http.FileServer(http.Dir(app.cfg.staticDir))
+	//fileServer := http.FileServer(http.Dir(app.cfg.staticDir))
+	//router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", neuter(fileServer)))
+
+	// 改用 embeded files
+	// 将 ui.Files 嵌入式文件系统转换为 http.FS 类型，使其满足 http.FileSystem 接口的要求。然后，我们将其传递给 http.FileServer() 函数，创建文件服务器处理程序。
+	fileServer := http.FileServer(http.FS(ui.Files))
 	// log.Print(cfg)
-	router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", neuter(fileServer)))
+	router.Handler(http.MethodGet, "/static/*filepath", fileServer)
+	// 我们的静态文件包含在ui.Files嵌入式文件系统的“Static”文件夹中。因此，例如，我们的CSS样式表位于“Static/css/main.css”。这意味着我们现在不再需要从请求URL中去掉前缀--任何以静态开头的请求都可以直接传递到文件服务器，并且将提供相应的静态文件(只要它存在)。
 
 	// 该中间件会在每次 HTTP 请求和响应时自动加载和保存会话数据。
 	// 使用 "dynamic "中间件链的无保护应用路由。

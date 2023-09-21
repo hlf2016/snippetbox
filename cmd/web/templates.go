@@ -2,7 +2,9 @@ package main
 
 import (
 	"github.com/hlf2016/snippetbox/internal/models"
+	"github.com/hlf2016/snippetbox/ui"
 	"html/template"
+	"io/fs"
 	"path/filepath"
 	"time"
 )
@@ -31,7 +33,10 @@ func newTemplateCache() (map[string]*template.Template, error) {
 	cache := map[string]*template.Template{}
 	//	使用 filepath.Glob() 函数获取与"./ui/html/pages/*.tmpl "模式匹配的所有文件路径的片段。
 	//	这将基本上为我们提供应用程序 "页面 "模板的所有文件路径片段，例如[ui/html/pages/home.tmpl ui/html/pages/view.tmpl]
-	pages, err := filepath.Glob("./ui/html/pages/*.tmpl")
+	// pages, err := filepath.Glob("./ui/html/pages/*.tmpl") // 替换成下面的 embedded filesystems
+
+	// 使用 fs.Glob() 获取 ui.Files 内嵌文件系统中与 "html/pages/*.tmpl "模式匹配的所有文件路径的片段。就像之前一样，这基本上为我们提供了应用程序所有 "page"模板的片段。
+	pages, err := fs.Glob(ui.Files, "html/pages/*.tmpl")
 	if err != nil {
 		return nil, err
 	}
@@ -39,20 +44,33 @@ func newTemplateCache() (map[string]*template.Template, error) {
 	for _, page := range pages {
 		// 从完整文件路径中提取文件名（如 "home.tmpl"）并将其赋值给名称变量
 		name := filepath.Base(page)
+
+		// 创建一个切片，其中包含我们要解析的模板的文件路径模式。
+		patterns := []string{
+			"html/base.tmpl",
+			"html/pages/partials/*.tmpl",
+			page,
+		}
 		// 将基本模板文件解析为模板集
 		// 在调用 ParseFiles() 方法之前，template.FuncMap 必须与模板集一起注册。
 		// 这意味着我们必须使用 template.New() 创建一个空模板集，使用 Funcs() 方法注册 template.FuncMap，然后按正常方法解析文件。
-		ts, err := template.New(name).Funcs(functions).ParseFiles("./ui/html/base.tmpl")
-		if err != nil {
-			return nil, err
-		}
+		//ts, err := template.New(name).Funcs(functions).ParseFiles("./ui/html/base.tmpl")
+		//if err != nil {
+		//	return nil, err
+		//}
 		// 调用此模板集 ts 上的 ParseGlob() 来添加任何 partials 页面。
-		ts, err = ts.ParseGlob("./ui/html/pages/partials/*.tmpl")
-		if err != nil {
-			return nil, err
-		}
+		//ts, err = ts.ParseGlob("./ui/html/pages/partials/*.tmpl")
+		//if err != nil {
+		//	return nil, err
+		//}
 		// 在此模板集 ts 上调用 ParseFiles() 添加页面模板
-		ts, err = ts.ParseFiles(page)
+		//ts, err = ts.ParseFiles(page)
+		//if err != nil {
+		//	return nil, err
+		//}
+
+		// 改用 embedded filesystems
+		ts, err := template.New(name).Funcs(functions).ParseFS(ui.Files, patterns...)
 		if err != nil {
 			return nil, err
 		}

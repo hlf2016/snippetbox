@@ -39,5 +39,26 @@ tlsConfig := &tls.Config{
 - 只需确保您始终在会话 cookie 上设置 SameSite=Lax 或 SameSite=Strict；
 - 对任何改变状态的请求使用 "不安全 "HTTP 方法（即 POST、PUT 或 DELETE）。
 
+## 使用嵌入式文件
+#### 用法
+```go
+package ui
+import (
+ "embed"
+)
+//go:embed "html" "static"
+var Files embed.FS
+```
+这看起来像一个注释，但实际上是一个特殊的注释指令。编译应用程序时，这条注释指令会指示 Go 将 ui/html 和 ui/static 文件夹中的文件存储到全局变量 Files 引用的 embed.FS 嵌入式文件系统中。
+#### 注意事项：
+- 注释指令必须紧贴在要存储嵌入文件的变量上方。
+- 该指令的一般格式为 go:embed <paths>，可以在一个指令中指定多个路径（如上面的代码）。路径应相对于包含该指令的源代码文件。因此，在我们的例子中，go:embed "static" "html "嵌入了项目中的 ui/static 和 ui/html 目录。
+- 您只能在包级别的全局变量上使用 go:embed 指令，而不能在函数或方法中使用。如果试图在函数或方法中使用该指令，编译时会出现 "go:embed cannot apply to var inside func "的错误。
+- 路径不能包含.或.元素，也不能以.开头或结尾。 这基本上限制了你只能嵌入与带有 go:embed 指令的源代码位于同一目录（或子目录）中的文件。
+- 如果路径指向一个目录，那么该目录中的所有文件都会被递归嵌入，名称以 . 或 .. 开头的文件除外。如果要包含这些文件，应使用 all:前缀，如 go:embed "all:static"。
+- 路径分隔符应始终为正斜线，即使在 Windows 机器上也是如此
+- 嵌入式文件系统的根目录总是包含 go:embed 指令的目录。因此，在上面的示例中，我们的 Files 变量包含一个 embed.FS 嵌入式文件系统，而该文件系统的根目录就是我们的 ui 目录。
+
+
 
 
