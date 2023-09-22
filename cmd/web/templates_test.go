@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/hlf2016/snippetbox/internal/assert"
 	"testing"
 	"time"
 )
@@ -33,9 +34,7 @@ func TestHumanDate(t *testing.T) {
 		// 使用 t.Run() 函数为每个测试用例运行一个子测试。第一个参数是测试名称（用于在任何日志输出中标识子测试），第二个参数是匿名函数，其中包含每个案例的实际测试内容
 		t.Run(tt.name, func(t *testing.T) {
 			hd := humanDate(tt.tm)
-			if hd != tt.want {
-				t.Errorf("got %q; want %q", hd, tt.want)
-			}
+			assert.Equal(t, hd, tt.want)
 		})
 	}
 }
