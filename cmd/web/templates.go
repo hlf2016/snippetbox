@@ -21,7 +21,12 @@ type templateData struct {
 }
 
 func humanDate(t time.Time) string {
-	return t.Format("02 Jan 2006 at 15:04")
+	// 若传参值为零时刻 即 January 1, year 1, 00:00:00 UTC 返回空字符串
+	if t.IsZero() {
+		return ""
+	}
+	// 无论传参值是何种时区 先转成 UTC 时区 再进行转换 确保只输出 UTC 时区时间
+	return t.UTC().Format("02 Jan 2006 at 15:04")
 }
 
 // 初始化 template.FuncMap 对象并将其存储在全局变量中。它本质上是一个字符串键值映射，在自定义模板函数名称和函数本身之间起查找作用。
