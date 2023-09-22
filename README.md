@@ -59,6 +59,22 @@ var Files embed.FS
 - 路径分隔符应始终为正斜线，即使在 Windows 机器上也是如此
 - 嵌入式文件系统的根目录总是包含 go:embed 指令的目录。因此，在上面的示例中，我们的 Files 变量包含一个 embed.FS 嵌入式文件系统，而该文件系统的根目录就是我们的 ui 目录。
 
+## 打包程序
+```shell
+go build -o ./releases ./cmd/web 
+cp -r ./tls releases 
+cp -r ./log releases
+cd releases
+./web
+```
 
+## 测试
+
+```shell
+// 运行 ./cmd/web 下的测试
+go test ./cmd/web  
+// 显示详细信息
+go test -v ./cmd/web
+```
 
 
