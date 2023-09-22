@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/http/cookiejar"
 	"net/http/httptest"
 	"testing"
 )
@@ -24,6 +25,18 @@ type testServer struct {
 // 创建 newTestServer 辅助程序，该程序将初始化并返回一个自定义 testServer 类型的新实例。
 func newTestServer(t *testing.T, h http.Handler) *testServer {
 	ts := httptest.NewTLSServer(h)
+
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// 将 cookie jar 添加到测试服务器客户端。现在，使用该客户端时，任何响应 cookie 都将被存储并随后续请求一起发送。
+	ts.Client().Jar = jar
+	// 通过设置自定义 CheckRedirect 函数，禁用测试服务器客户端的重定向跟踪功能。
+	// 每当客户端收到 3xx 响应时，该函数就会被调用，并通过始终返回 http.ErrUseLastResponse 错误，强制客户端立即返回收到的响应。
+	ts.Client().CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
 	return &testServer{ts}
 }
 
