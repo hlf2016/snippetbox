@@ -2,18 +2,37 @@ package main
 
 import (
 	"bytes"
+	"github.com/alexedwards/scs/v2"
+	"github.com/go-playground/form/v4"
+	"github.com/hlf2016/snippetbox/internal/models/mocks"
 	"io"
 	"log"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 func newTestApplication(t *testing.T) *application {
+	templateCache, err := newTemplateCache()
+	if err != nil {
+		t.Fatal(err)
+	}
+	formDecoder := form.NewDecoder()
+	// 和一个会话管理器实例。请注意，除了没有为会话管理器设置 "存储 "外，我们使用了与生产版相同的设置。如果不设置存储空间，SCS 软件包将默认使用瞬时内存存储空间，这非常适合测试目的。
+	sessionManager := scs.New()
+	sessionManager.Lifetime = 12 * time.Hour
+	sessionManager.Cookie.Secure = true
+
 	return &application{
-		errorLogger: log.New(io.Discard, "", 0),
-		infoLogger:  log.New(io.Discard, "", 0),
+		errorLogger:    log.New(io.Discard, "", 0),
+		infoLogger:     log.New(io.Discard, "", 0),
+		snippets:       &mocks.SnippetModel{},
+		users:          &mocks.UserModel{},
+		templateCache:  templateCache,
+		formDecoder:    formDecoder,
+		sessionManager: sessionManager,
 	}
 }
 
