@@ -6,6 +6,10 @@ import (
 )
 
 func TestUserModelExists(t *testing.T) {
+	// 如果运行测试时提供了"-short "标记，则跳过测试。
+	if testing.Short() {
+		t.Skip("models: skipping integration test")
+	}
 	tests := []struct {
 		name   string
 		userID int
