@@ -29,12 +29,12 @@ func (app *application) routes() http.Handler {
 	// 我们的静态文件包含在ui.Files嵌入式文件系统的“Static”文件夹中。因此，例如，我们的CSS样式表位于“Static/css/main.css”。这意味着我们现在不再需要从请求URL中去掉前缀--任何以静态开头的请求都可以直接传递到文件服务器，并且将提供相应的静态文件(只要它存在)。
 
 	router.HandlerFunc(http.MethodGet, "/ping", ping)
-
 	// 该中间件会在每次 HTTP 请求和响应时自动加载和保存会话数据。
 	// 使用 "dynamic "中间件链的无保护应用路由。
 	// 在所有 "dynamic"路由上使用 nosurf 中间件
 	dynamic := alice.New(app.sessionManager.LoadAndSave, noSurf, app.authenticate)
 
+	router.Handler(http.MethodGet, "/about", dynamic.ThenFunc(app.about))
 	router.Handler(http.MethodGet, "/", dynamic.ThenFunc(app.home))
 	router.Handler(http.MethodGet, "/snippet/view/:id", dynamic.ThenFunc(app.snippetView))
 	router.Handler(http.MethodGet, "/user/signup", dynamic.ThenFunc(app.userSignup))
