@@ -35,6 +35,7 @@ type config struct {
 	addr      string
 	staticDir string
 	dsn       string
+	debug     bool
 }
 
 func main() {
@@ -44,6 +45,8 @@ func main() {
 
 	// DSN 中的 parseTime=true 部分是一个特定于驱动程序的参数，它指示我们的驱动程序将 SQL TIME 和 DATE 字段转换为 Go time.Time 对象。
 	flag.StringVar(&cfg.dsn, "dsn", "goweb:25804769@/snippetbox?parseTime=true", "MySQL data source name")
+	// 是否启用 debug 模式 直接在页面上输出错误信息
+	flag.BoolVar(&cfg.debug, "debug", false, "whether in debug mode ")
 	// 重要的是，我们使用 flag.Parse() 函数来解析命令行标志。它会读入命令行标志值并将其赋值给 addr 变量。
 	// 您需要在使用 addr 变量之前调用该函数，否则它将始终包含默认值":4000"。如果在解析过程中遇到任何错误，应用程序将被终止。
 	flag.Parse()
