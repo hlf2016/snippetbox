@@ -236,7 +236,12 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	//	将当前用户的 ID 添加到会话中，这样他们就 "登录 "了。
 	app.sessionManager.Put(r.Context(), app.authId, id)
 
-	http.Redirect(w, r, "/snippet/create", http.StatusSeeOther)
+	redirectUrlPath := "/snippet/create"
+	targetUrlPath := app.sessionManager.PopString(r.Context(), "targetUrlPath")
+	if targetUrlPath != "" {
+		redirectUrlPath = targetUrlPath
+	}
+	http.Redirect(w, r, redirectUrlPath, http.StatusSeeOther)
 }
 func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
 	err := app.sessionManager.RenewToken(r.Context())
